@@ -60,9 +60,9 @@ struct Game {
 
 	Mesh tile_mesh;
 	Mesh cursor_mesh;
-	Mesh doll_mesh;
-	Mesh egg_mesh;
-	Mesh cube_mesh;
+	Mesh duck_mesh;
+	Mesh target_mesh;
+	Mesh enemy_mesh;
 
 	GLuint meshes_for_simple_shading_vao = -1U; //vertex array object that describes how to connect the meshes_vbo to the simple_shading_program
 
@@ -70,15 +70,15 @@ struct Game {
 
 	glm::uvec2 board_size = glm::uvec2(5,4);
 	std::vector< Mesh const * > board_meshes;
-	std::vector< glm::quat > board_rotations;
+	std::vector< glm::mat4 > board_translations;
 
 	glm::uvec2 cursor = glm::vec2(0,0);
 
 	struct {
-		bool roll_left = false;
-		bool roll_right = false;
-		bool roll_up = false;
-		bool roll_down = false;
+		bool left = false;
+		bool right = false;
+		bool up = false;
+		bool down = false;
 	} controls;
 
 };
