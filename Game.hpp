@@ -77,13 +77,19 @@ struct Game {
 	float power = 0.0f; //should only be between 0 and 1
 	float const max_power = 2.5f;
 	bool increase = true;
-	uint32_t cursor = 90; //should only be between 0 and 180
+	int32_t cursor = 0; //should only be between -90 and 90
+
+	glm::mat4 duck_pos;
+	glm::vec2 velocity = glm::vec2(0.0f, 0.0f);
+	float height = 0.0f;
+	float xpos = 0.0f;
 
 	struct {
 		bool left = false;
 		bool right = false;
 		bool up = false;
 		bool down = false;
+		bool jump = false;
 	} controls;
 
 };

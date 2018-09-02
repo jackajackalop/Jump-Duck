@@ -207,6 +207,12 @@ Game::Game() {
 	//set up game board with meshes and rolls:
 	board_meshes.reserve(board_size.x * board_size.y);
 	board_translations.reserve(board_size.x * board_size.y); 
+	duck_pos = glm::mat4(
+			0.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 0.0f, 0.0f);
+;
 	//TODO change all the allocations to max number of pieces instead of board size?
 	std::mt19937 mt(0xbead1234); //wtf apparently random num gen
 
@@ -215,10 +221,10 @@ Game::Game() {
 	//TODO add enemy and targets
 	board_meshes.emplace_back(&duck_mesh);	
 	board_translations.emplace_back(glm::mat4(
-			0.0f, 0.0f, 0.0f, 0.0f,
-			0.0f, 0.0f, 0.0f, 0.0f,
-			0.0f, 0.0f, 0.0f, 0.0f,
-			0.0f, 0.0f, 0.0f, 0.0f));
+				0.0f, 0.0f, 0.0f, 0.0f,
+				0.0f, 0.0f, 0.0f, 0.0f,
+				0.0f, 0.0f, 0.0f, 0.0f,
+				0.0f, 0.0f, 0.0f, 0.0f));
 }
 
 Game::~Game() {
@@ -240,16 +246,21 @@ bool Game::handle_event(SDL_Event const &evt, glm::uvec2 window_size) {
 		return false;
 	}
 
-	//move duck on L/R/U/D press:
-	if (evt.type == SDL_KEYDOWN || evt.type == SDL_KEYUP) {
+	//move duck jump angle and power
+	if (evt.type == SDL_KEYDOWN|| evt.type == SDL_KEYUP) {
 		if (evt.key.keysym.scancode == SDL_SCANCODE_LEFT) {
 			controls.left = (evt.type == SDL_KEYDOWN);
 			return true;
 		} else if (evt.key.keysym.scancode == SDL_SCANCODE_RIGHT) {
 			controls.right = (evt.type == SDL_KEYDOWN);
 			return true;
-		} else if (evt.key.keysym.scancode == SDL_SCANCODE_SPACE) {
+		}
+		if (evt.key.keysym.scancode == SDL_SCANCODE_SPACE) {
 			controls.up = (evt.type == SDL_KEYDOWN);
+			if(controls.up == false) {
+				controls.jump = true;
+				velocity = glm::vec2(cursor/30.0f, 2.5*power);
+			}
 			return true;
 		}
 	}
@@ -261,10 +272,10 @@ void Game::update(float elapsed) {
 	glm::quat dr = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 	float amt = elapsed * 1.0f;
 	int32_t angle = 1;
-	if (controls.left && cursor>0) {
+	if (controls.left && cursor>-90) {
 		cursor-=angle;
 		dr = glm::angleAxis(amt, glm::vec3(0.0f, 0.0f, 1.0f)) * dr;
-	}else if (controls.right && cursor<180) {
+	}else if (controls.right && cursor<90) {
 		cursor+=angle;
 		dr = glm::angleAxis(-amt, glm::vec3(0.0f, 0.0f, 1.0f)) * dr;
 	}else if (controls.up){
@@ -280,6 +291,24 @@ void Game::update(float elapsed) {
 	if (dr != glm::quat()) {
 		glm::quat &r = cursor_rotation;
 		r = glm::normalize(dr * r);
+	}
+
+	if(controls.jump){
+		height += elapsed*(velocity.y+elapsed*-4.9f);
+		xpos += elapsed*velocity.x;
+		velocity.y += elapsed*-4.9;
+		if(height<0.01f){
+			height = 0.0f;
+			power = 0;
+			velocity.x = 0.0f;
+			controls.jump = false;
+		}
+		duck_pos = glm::mat4(
+			0.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 0.0f, 0.0f,
+			xpos, height, 0.0f, 0.0f);
+
 	}
 }
 
@@ -346,41 +375,39 @@ void Game::draw(glm::uvec2 drawable_size) {
 				x+0.5f, y+0.5f,-0.5f, 1.0f
 				)
 		 );
-	
 	draw_mesh(cursor_mesh,
-		glm::mat4(
-			1.0f, 0.0f, 0.0f, 0.0f,
-			0.0f, 1.0f, 0.0f, 0.0f,
-			0.0f, 0.0f, 1.0f, 0.0f,
-			x+0.5f, 0.5f, 0.0f, 1.0f
-		)*glm::mat4_cast(cursor_rotation)
-	);
-	
+			glm::mat4(
+				1.0f, 0.0f, 0.0f, 0.0f,
+				0.0f, 1.0f, 0.0f, 0.0f,
+				0.0f, 0.0f, 1.0f, 0.0f,
+				x+0.5f, 0.5f, 0.0f, 1.0f
+				)*glm::mat4_cast(cursor_rotation)
+		 );
+
 	draw_mesh(cursor_mesh_red,
-		glm::mat4(
-			1.0f, 0.0f, 0.0f, 0.0f,
-			0.0f, 1.0f, 0.0f, 0.0f,
-			0.0f, 0.0f, 1.0f, 0.0f,
-			x+0.5f, 0.5f, 0.0f, 1.0f
-		)*glm::mat4_cast(cursor_rotation)
-		*glm::mat4(
-			1.0f, 0.0f, 0.0f, 0.0f,
-			0.0f, 1.0f+power, 0.0f, 0.0f,
-			0.0f, 0.0f, 1.0f, 0.0f,
-			0.0f, 0.0f, 0.0f, 1.0f)
-	);
-	
-	
+			glm::mat4(
+				1.0f, 0.0f, 0.0f, 0.0f,
+				0.0f, 1.0f, 0.0f, 0.0f,
+				0.0f, 0.0f, 1.0f, 0.0f,
+				x+0.5f, 0.5f, 0.0f, 1.0f
+				)*glm::mat4_cast(cursor_rotation)
+			*glm::mat4(
+				1.0f, 0.0f, 0.0f, 0.0f,
+				0.0f, 1.0f+power, 0.0f, 0.0f,
+				0.0f, 0.0f, 1.0f, 0.0f,
+				0.0f, 0.0f, 0.0f, 1.0f)
+		 );
+
 	draw_mesh(duck_mesh,
-		glm::mat4(
-			1.0f, 0.0f, 0.0f, 0.0f,
-			0.0f, 1.0f, 0.0f, 0.0f,
-			0.0f, 0.0f, 1.0f, 0.0f,
-			x+0.5f, y+0.5f, 0.0f, 1.0f
-			)
-		+ (board_translations[y*board_size.x+x])
-	);
-		
+			glm::mat4(
+				1.0f, 0.0f, 0.0f, 0.0f,
+				0.0f, 1.0f, 0.0f, 0.0f,
+				0.0f, 0.0f, 1.0f, 0.0f,
+				x+0.5f, y+0.5f, 0.0f, 1.0f
+				)
+			+ (duck_pos)
+		 );
+
 	glUseProgram(0);
 
 	GL_ERRORS();
