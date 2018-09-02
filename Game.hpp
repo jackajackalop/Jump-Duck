@@ -60,6 +60,7 @@ struct Game {
 
 	Mesh tile_mesh;
 	Mesh cursor_mesh;
+	Mesh cursor_mesh_red;
 	Mesh duck_mesh;
 	Mesh target_mesh;
 	Mesh enemy_mesh;
@@ -71,8 +72,12 @@ struct Game {
 	glm::uvec2 board_size = glm::uvec2(5,4);
 	std::vector< Mesh const * > board_meshes;
 	std::vector< glm::mat4 > board_translations;
+	glm::quat cursor_rotation;
 
-	glm::uvec2 cursor = glm::vec2(0,0);
+	float power = 0.0f; //should only be between 0 and 1
+	float const max_power = 2.5f;
+	bool increase = true;
+	uint32_t cursor = 90; //should only be between 0 and 180
 
 	struct {
 		bool left = false;

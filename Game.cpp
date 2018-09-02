@@ -176,7 +176,8 @@ Game::Game() {
 			return f->second;
 		};
 		//tile_mesh = lookup("Tile");
-		//cursor_mesh = lookup("Cursor");
+		cursor_mesh = lookup("White");
+		cursor_mesh_red = lookup("Red");
 		duck_mesh = lookup("Doll");
 		target_mesh = lookup("Egg");
 		enemy_mesh = lookup("Cube");
@@ -247,11 +248,8 @@ bool Game::handle_event(SDL_Event const &evt, glm::uvec2 window_size) {
 		} else if (evt.key.keysym.scancode == SDL_SCANCODE_RIGHT) {
 			controls.right = (evt.type == SDL_KEYDOWN);
 			return true;
-		} else if (evt.key.keysym.scancode == SDL_SCANCODE_UP) {
+		} else if (evt.key.keysym.scancode == SDL_SCANCODE_SPACE) {
 			controls.up = (evt.type == SDL_KEYDOWN);
-			return true;
-		} else if (evt.key.keysym.scancode == SDL_SCANCODE_DOWN) {
-			controls.down = (evt.type == SDL_KEYDOWN);
 			return true;
 		}
 	}
@@ -260,38 +258,28 @@ bool Game::handle_event(SDL_Event const &evt, glm::uvec2 window_size) {
 
 void Game::update(float elapsed) {
 	//if the roll keys are pressed, rotate everything on the same row or column as the cursor:
-	glm::mat4 dr = glm::mat4(
-			0.0f, 0.0f, 0.0f, 0.0f,
-			0.0f, 0.0f, 0.0f, 0.0f,
-			0.0f, 0.0f, 0.0f, 0.0f,
-			0.0f, 0.0f, 0.0f, 0.0f);
-	float amt = 3.0f*elapsed;
-	if (controls.left) {
-		dr = glm::mat4(
-			0.0f, 0.0f, 0.0f, 0.0f,
-			0.0f, 0.0f, 0.0f, 0.0f,
-			0.0f, 0.0f, 0.0f, 0.0f,
-			-amt, 0.0f, 0.0f, 0.0f
-			);
-	}
-	if (controls.right) {
-		dr = glm::mat4(
-			0.0f, 0.0f, 0.0f, 0.0f,
-			0.0f, 0.0f, 0.0f, 0.0f,
-			0.0f, 0.0f, 0.0f, 0.0f,
-			amt, 0.0f, 0.0f, 0.0f
-			);
-	}
-	if (controls.up) {
-		//TODO JUMP
+	glm::quat dr = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+	float amt = elapsed * 1.0f;
+	int32_t angle = 1;
+	if (controls.left && cursor>0) {
+		cursor-=angle;
+		dr = glm::angleAxis(amt, glm::vec3(0.0f, 0.0f, 1.0f)) * dr;
+	}else if (controls.right && cursor<180) {
+		cursor+=angle;
+		dr = glm::angleAxis(-amt, glm::vec3(0.0f, 0.0f, 1.0f)) * dr;
+	}else if (controls.up){
+		if(increase && power<max_power)
+			power+=0.03f;
+		else if(!increase && power>0.0f)
+			power-=0.03f;
+
+		if(increase && power>max_power) increase = false;
+		if(!increase && power<0) increase = true;
 	}
 
-	if (dr != glm::mat4(0.0f, 0.0f, 0.0f, 0.0f,
-			0.0f, 0.0f, 0.0f, 0.0f,
-			0.0f, 0.0f, 0.0f, 0.0f,
-			0.0f, 0.0f, 0.0f, 0.0f)) {	
-		glm::mat4 &r = board_translations[0];
-		r = dr+r;
+	if (dr != glm::quat()) {
+		glm::quat &r = cursor_rotation;
+		r = glm::normalize(dr * r);
 	}
 }
 
@@ -358,17 +346,41 @@ void Game::draw(glm::uvec2 drawable_size) {
 				x+0.5f, y+0.5f,-0.5f, 1.0f
 				)
 		 );
-	draw_mesh(*board_meshes[y*board_size.x+x],
-			glm::mat4(
-				1.0f, 0.0f, 0.0f, 0.0f,
-				0.0f, 1.0f, 0.0f, 0.0f,
-				0.0f, 0.0f, 1.0f, 0.0f,
-				x+0.5f, y+0.5f, 0.0f, 1.0f
-				)
-			+ (board_translations[y*board_size.x+x])
-			//* glm::mat4_cast(board_translations[y*board_size.x+x])
-		 );
-
+	
+	draw_mesh(cursor_mesh,
+		glm::mat4(
+			1.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, 1.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 1.0f, 0.0f,
+			x+0.5f, 0.5f, 0.0f, 1.0f
+		)*glm::mat4_cast(cursor_rotation)
+	);
+	
+	draw_mesh(cursor_mesh_red,
+		glm::mat4(
+			1.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, 1.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 1.0f, 0.0f,
+			x+0.5f, 0.5f, 0.0f, 1.0f
+		)*glm::mat4_cast(cursor_rotation)
+		*glm::mat4(
+			1.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, 1.0f+power, 0.0f, 0.0f,
+			0.0f, 0.0f, 1.0f, 0.0f,
+			0.0f, 0.0f, 0.0f, 1.0f)
+	);
+	
+	
+	draw_mesh(duck_mesh,
+		glm::mat4(
+			1.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, 1.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 1.0f, 0.0f,
+			x+0.5f, y+0.5f, 0.0f, 1.0f
+			)
+		+ (board_translations[y*board_size.x+x])
+	);
+		
 	glUseProgram(0);
 
 	GL_ERRORS();
