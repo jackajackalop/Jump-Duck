@@ -214,10 +214,10 @@ Game::Game() {
 	//TODO add enemy and targets
 	board_meshes.emplace_back(&duck_mesh);	
 	board_translations.emplace_back(glm::mat4(
-			1.0f, 0.0f, 0.0f, 0.0f,
-			0.0f, 1.0f, 0.0f, 0.0f,
-			0.0f, 0.0f, 1.0f, 0.0f,
-			0.0f, 0.0f,0.0f, 1.0f));
+			0.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 0.0f, 0.0f));
 }
 
 Game::~Game() {
@@ -261,51 +261,37 @@ bool Game::handle_event(SDL_Event const &evt, glm::uvec2 window_size) {
 void Game::update(float elapsed) {
 	//if the roll keys are pressed, rotate everything on the same row or column as the cursor:
 	glm::mat4 dr = glm::mat4(
-			1.0f, 0.0f, 0.0f, 0.0f,
-			0.0f, 1.0f, 0.0f, 0.0f,
-			0.0f, 0.0f, 1.0f, 0.0f,
-			0.0f, 0.0f, 0.0f, 1.0f);
+			0.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 0.0f, 0.0f);
 	float amt = 3.0f*elapsed;
-	//TODO 
 	if (controls.left) {
 		dr = glm::mat4(
-			1.0f, 0.0f, 0.0f, -amt,
-			0.0f, 1.0f, 0.0f, 0.0f,
-			0.0f, 0.0f, 1.0f, 0.0f,
-			0.0f, 0.0f, 0.0f, 1.0f
-			);// * dr;
+			0.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 0.0f, 0.0f,
+			-amt, 0.0f, 0.0f, 0.0f
+			);
 	}
 	if (controls.right) {
 		dr = glm::mat4(
-			1.0f, 0.0f, 0.0f, amt,
-			0.0f, 1.0f, 0.0f, 0.0f,
-			0.0f, 0.0f, 1.0f, 0.0f,
-			0.0f, 0.0f, 0.0f, 1.0f
-			);// * dr;
+			0.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 0.0f, 0.0f,
+			amt, 0.0f, 0.0f, 0.0f
+			);
 	}
 	if (controls.up) {
-		dr = glm::mat4(
-			1.0f, 0.0f, 0.0f, 0.0f,
-			0.0f, 1.0f, 0.0f, amt,
-			0.0f, 0.0f, 1.0f, 0.0f,
-			0.0f, 0.0f, 0.0f, 1.0f
-			);// * dr;
-	}
-	if (controls.down) {
-		dr = glm::mat4(
-			1.0f, 0.0f, 0.0f, 0.0f,
-			0.0f, 1.0f, 0.0f, -amt,
-			0.0f, 0.0f, 1.0f, 0.0f,
-			0.0f, 0.0f, 0.0f, 1.0f
-			);// * dr;
+		//TODO JUMP
 	}
 
-	if (dr != glm::mat4(1.0f, 0.0f, 0.0f, 0.0f,
-			0.0f, 1.0f, 0.0f, 0.0f,
-			0.0f, 0.0f, 1.0f, 0.0f,
-			0.0f, 0.0f, 0.0f, 1.0f)) {	
+	if (dr != glm::mat4(0.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 0.0f, 0.0f)) {	
 		glm::mat4 &r = board_translations[0];
-		r = dr*r;
+		r = dr+r;
 	}
 }
 
@@ -379,7 +365,7 @@ void Game::draw(glm::uvec2 drawable_size) {
 				0.0f, 0.0f, 1.0f, 0.0f,
 				x+0.5f, y+0.5f, 0.0f, 1.0f
 				)
-			* (board_translations[y*board_size.x+x])
+			+ (board_translations[y*board_size.x+x])
 			//* glm::mat4_cast(board_translations[y*board_size.x+x])
 		 );
 
