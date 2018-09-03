@@ -71,6 +71,7 @@ struct Game {
 	Mesh duck_mesh;
 	Mesh target_mesh;
 	Mesh enemy_mesh;
+	Mesh bg_mesh;
 	std::vector<Mesh> numbers;
 	
 	GLuint meshes_for_simple_shading_vao = -1U; //vertex array object that describes how to connect the meshes_vbo to the simple_shading_program

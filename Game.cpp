@@ -180,7 +180,8 @@ Game::Game() {
 		duck_mesh = lookup("Doll");
 		target_mesh = lookup("Egg");
 		enemy_mesh = lookup("Cube");
-		
+		bg_mesh = lookup("BG");
+
 		//number meshes are from 
 		//https://www.turbosquid.com/3d-models/free-numbers-1-2-3d-model/266953
 		Mesh mesh0 = lookup("0");
@@ -284,7 +285,7 @@ bool Game::handle_event(SDL_Event const &evt, glm::uvec2 window_size) {
 		}
 		if (evt.key.keysym.scancode == SDL_SCANCODE_SPACE) {
 			controls.up = (evt.type == SDL_KEYDOWN);
-			if(controls.up == false) {
+			if(controls.up == false && height == 0.0f) {
 				controls.jump = true;
 				velocity = glm::vec2(cursor/30.0f, 2.5*power);
 			}
@@ -412,7 +413,7 @@ void Game::update(float elapsed) {
 			velocity.y = -2.0f;
 		}
 
-		if(height<0.01f){
+		if(height<0.03f){
 			height = 0.0f;
 			power = 0;
 			velocity.x = 0.0f;
@@ -501,13 +502,20 @@ void Game::draw(glm::uvec2 drawable_size) {
 		glDrawArrays(GL_TRIANGLES, mesh.first, mesh.count);
 	};
 	
+	draw_mesh(bg_mesh, glm::mat4(
+			1.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, 1.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 1.0f, 0.0f,
+			0.0, 0.0f, 0.0f, 1.0f));
+
+
 	if(controls.up || controls.right || controls.left){
 		draw_mesh(cursor_mesh, //white jump bar
 			glm::mat4(
 				1.0f, 0.0f, 0.0f, 0.0f,
 				0.0f, 1.0f, 0.0f, 0.0f,
 				0.0f, 0.0f, 1.0f, 0.0f,
-				0.0f, 0.5f, 0.0f, 1.0f
+				0.0f, 0.3f, 0.0f, 1.0f
 				)*glm::mat4_cast(cursor_rotation) //jump angle
 				+duck_pos);
 	
@@ -515,7 +523,7 @@ void Game::draw(glm::uvec2 drawable_size) {
 				1.0f, 0.0f, 0.0f, 0.0f,
 				0.0f, 1.0f, 0.0f, 0.0f,
 				0.0f, 0.0f, 1.0f, 0.0f,
-				0.0f, 0.5f, 0.0f, 1.0f
+				0.0f, 0.3f, 0.0f, 1.0f
 			)*glm::mat4_cast(cursor_rotation) //jump angle
 			*glm::mat4(
 				1.0f, 0.0f, 0.0f, 0.0f,
