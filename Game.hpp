@@ -25,12 +25,14 @@ struct Game {
 
 	void check_targets();
 	void add_target();
+	void check_enemies();
 
 	//update is called at the start of a new frame, after events are handled:
 	void update(float elapsed);
 
 	//draw is called after update:
 	void draw(glm::uvec2 drawable_size);
+	void draw_score();
 
 	//------- opengl resources -------
 
@@ -68,27 +70,39 @@ struct Game {
 	Mesh duck_mesh;
 	Mesh target_mesh;
 	Mesh enemy_mesh;
-
+	std::vector<Mesh> numbers;
+/*	Mesh mesh0;
+	Mesh mesh1;
+	Mesh mesh2;
+	Mesh mesh3;
+	Mesh mesh4;
+	Mesh mesh5;
+	Mesh mesh6;
+	Mesh mesh7;
+	Mesh mesh8;
+	Mesh mesh9;
+*/
 	GLuint meshes_for_simple_shading_vao = -1U; //vertex array object that describes how to connect the meshes_vbo to the simple_shading_program
 
 	//------- game state -------
-
-	glm::uvec2 board_size = glm::uvec2(5,4);
-	std::vector< glm::mat4 > board_translations;
-	std::vector< glm::mat4 > targets;
-	glm::quat cursor_rotation;
-
-	float power = 0.0f; //should only be between 0 and 1
 	float const max_power = 2.5f;
 	float const min_r = 0.3f;
+
+	glm::uvec2 board_size = glm::uvec2(5,4);
+	std::vector< glm::mat4 > board_translations; //enemy movements
+	std::vector< glm::mat4 > targets; 
+	glm::quat cursor_rotation;
+	glm::mat4 duck_pos;
+
+	float power = 0.0f; //should only be between 0 and 1
 	bool increase = true;
 	int32_t cursor = 0; //should only be between -90 and 90
+	float speed = 0.5f; //enemy speed
+	uint32_t score = 0;
 
-	glm::mat4 duck_pos;
+	float height = 0.0f; //ducks height
+	float xpos = 0.0f; //ducks horizontal position 
 	glm::vec2 velocity = glm::vec2(0.0f, 0.0f);
-	float height = 0.0f;
-	float xpos = 0.0f;
-	float speed = 0.5f;
 
 	struct {
 		bool left = false;

@@ -180,6 +180,30 @@ Game::Game() {
 		duck_mesh = lookup("Doll");
 		target_mesh = lookup("Egg");
 		enemy_mesh = lookup("Cube");
+		
+		//number meshes are from 
+		//https://www.turbosquid.com/3d-models/free-numbers-1-2-3d-model/266953
+		Mesh mesh0 = lookup("0");
+		numbers.emplace_back(mesh0);	
+		Mesh mesh1 = lookup("1");
+		numbers.emplace_back(mesh1);	
+		Mesh mesh2 = lookup("2");
+		numbers.emplace_back(mesh2);	
+		Mesh mesh3 = lookup("3");
+		numbers.emplace_back(mesh3);	
+		Mesh mesh4 = lookup("4");
+		numbers.emplace_back(mesh4);	
+		Mesh mesh5 = lookup("5");
+		numbers.emplace_back(mesh5);	
+		Mesh mesh6 = lookup("6");
+		numbers.emplace_back(mesh6);	
+		Mesh mesh7 = lookup("7");
+		numbers.emplace_back(mesh7);	
+		Mesh mesh8 = lookup("8");
+		numbers.emplace_back(mesh8);	
+		Mesh mesh9 = lookup("9");
+		numbers.emplace_back(mesh9);	
+	
 	}
 
 	{ //create vertex array object to hold the map from the mesh vertex buffer to shader program attributes:
@@ -215,7 +239,7 @@ Game::Game() {
 
 	std::vector< Mesh const * > meshes{ &duck_mesh, &target_mesh, &enemy_mesh };
 
-	//TODO add enemy and targets
+	//TODO add more enemy
 	board_translations.emplace_back(glm::mat4(
 				0.0f, 0.0f, 0.0f, 0.0f,
 				0.0f, 0.0f, 0.0f, 0.0f,
@@ -271,6 +295,7 @@ bool Game::handle_event(SDL_Event const &evt, glm::uvec2 window_size) {
 
 void Game::add_target(){
 	//following chunk is from the cppreference on random device
+	//which I looked up after a recommendation from Thejaswi Kadur
 	//https://en.cppreference.com/w/cpp/numeric/random/random_device
 	std::random_device rd;
     	std::uniform_int_distribution<int> dist(0, 0xbead1234);
@@ -284,7 +309,6 @@ void Game::add_target(){
 			0.0f, 1.0f, 0.0f, 0.0f,
 			0.0f, 0.0f, 1.0f, 0.0f,
 			newX, newY, 0.0f, 1.0f));
-
 }
 
 void Game::check_targets(){
@@ -292,13 +316,28 @@ void Game::check_targets(){
 		glm::vec2 t_pos = glm::vec2(targets[i][3][0], 
 						targets[i][3][1]);
 		glm::vec2 c_pos = glm::vec2(duck_pos[3][0],
-						duck_pos[3][1]);
+						height);
 		
 		float distance = std::sqrt(std::pow((c_pos[0]-t_pos[0]), 2.0f)
 				+std::pow((c_pos[1]-t_pos[1]), 2.0f));
 		if(distance <= min_r){
 			targets.erase(targets.begin()+i);
 			add_target();
+			score++;
+		}
+	}
+}
+
+void Game::check_enemies(){
+	for(uint32_t i = 0; i < 1; i++){
+		glm::vec2 t_pos = glm::vec2(board_translations[i][3][0], 
+					board_translations[i][3][1]);
+		glm::vec2 c_pos = glm::vec2(duck_pos[3][0],
+						height);
+		float distance = std::sqrt(std::pow((c_pos[0]-t_pos[0]), 2.0f)
+				+std::pow((c_pos[1]-t_pos[1]), 2.0f));
+		if(distance <= min_r){
+			//TODO gameover
 		}
 	}
 }
@@ -330,9 +369,13 @@ void Game::update(float elapsed) {
 	}
 
 	if(controls.jump){
+		//referenced the discussion here
+		//https://gamedev.stackexchange.com/questions/15708/how-can-i-implement-gravity
+		//although i guess i did take ap physics c...
 		height += elapsed*(velocity.y+elapsed*-4.9f);
 		xpos += elapsed*velocity.x;
 		velocity.y += elapsed*-4.9;
+		
 		if(height<0.01f){
 			height = 0.0f;
 			power = 0;
@@ -351,6 +394,7 @@ void Game::update(float elapsed) {
 					board_translations[0][3][1]);
 	board_translations[0][3][0] += (target[0]-current[0])/(400.0f*speed);
 	board_translations[0][3][1] += (height-current[1])/(400.0f*speed);
+	check_enemies();
 
 }
 
@@ -408,7 +452,6 @@ void Game::draw(glm::uvec2 drawable_size) {
 	};
 	uint32_t x = 0; 
 	uint32_t y = 0;
-	//TODO
 	
 	if(controls.up || controls.right || controls.left){
 		draw_mesh(cursor_mesh, //white jump bar
@@ -452,9 +495,22 @@ void Game::draw(glm::uvec2 drawable_size) {
 				x+0.5f, y+0.5f, 0.0f, 1.0f
 				) + board_translations[0]
 			);
-
-
-
+	
+	uint32_t remainder = score;
+	float xcoord = 3.8f;
+	do{
+		int digit = remainder%10;
+		draw_mesh(numbers[digit],
+			glm::mat4(
+				1.0f, 0.0f, 0.0f, 0.0f,
+				0.0f, 1.0f, 0.0f, 0.0f,
+				0.0f, 0.0f, 1.0f, 0.0f,
+				xcoord, 2.5f, 0.0f, 1.0f));
+				
+		remainder /= 10;
+		xcoord -= 0.1f;
+	}while(remainder>0);
+	
 	glUseProgram(0);
 
 	GL_ERRORS();
