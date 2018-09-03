@@ -246,7 +246,7 @@ Game::Game() {
 				0.0f, 0.0f, 0.0f, 0.0f,
 				0.0f, 0.0f, 0.0f, 0.0f,
 				0.0f, 3.0f, 0.0f, 0.0f));
-
+	bump.emplace_back(0.0f);
 	
 	std::mt19937 mt(0xbead1234); //wtf apparently random num gen
 	for(uint32_t i = 0; i<7; i++){
@@ -333,6 +333,7 @@ void Game::check_targets(){
 					0.0f, 0.0f, 0.0f, 0.0f,
 					0.0f, 0.0f, 0.0f, 0.0f,
 					0.0f, 3.0f, 0.0f, 0.0f));
+				bump.emplace_back(0.0f);
 			}
 
 		}
@@ -349,6 +350,22 @@ void Game::check_enemies(){
 				+std::pow((c_pos[1]-t_pos[1]), 2.0f));
 		if(distance <= min_r){
 			//TODO gameover
+		}
+	}
+}
+
+void Game::enemies_collision(uint32_t current){
+	glm::vec2 c_pos = glm::vec2(board_translations[current][3][0], 
+					board_translations[current][3][1]);
+	for(uint32_t i = 0; i < board_translations.size(); i++){
+		if(i!=current){
+			glm::vec2 t_pos = glm::vec2(board_translations[i][3][0], 						board_translations[i][3][1]);
+			float distance = std::sqrt(
+					std::pow((c_pos[0]-t_pos[0]), 2.0f)
+					+std::pow((c_pos[1]-t_pos[1]), 2.0f));
+			if(distance <= min_r){
+				bump[current] += 2.0f;
+			}
 		}
 	}
 }
@@ -413,10 +430,19 @@ void Game::update(float elapsed) {
 		glm::vec2 target = glm::vec2(duck_pos[3][0], duck_pos[3][1]);
 		glm::vec2 current = glm::vec2(board_translations[i][3][0],
 					board_translations[i][3][1]);
-		board_translations[i][3][0] += (target[0]-current[0])
-						/(400.0f*speed);
-		board_translations[i][3][1] += (height-current[1])
-						/(400.0f*speed);
+		float dx = (target[0]-current[0])/(400.0f*speed);
+		float dy = (height-current[1])/(400.0f*speed);
+		
+		if(bump[i]>0.0f){
+			dx *= -1.0f;
+			dy *= -1.0f;
+			bump[i] -= elapsed;
+		}
+
+		board_translations[i][3][0] += dx;
+		board_translations[i][3][1] += dy;
+
+		enemies_collision(i);
 	}
 	check_enemies();
 

@@ -26,8 +26,9 @@ struct Game {
 	void check_targets();
 	void add_target();
 	void check_enemies();
+	void enemies_collision(uint32_t i);
 
-	//update is called at the start of a new frame, after events are handled:
+	//update is called at the start of a new frame, after events are handled
 	void update(float elapsed);
 
 	//draw is called after update:
@@ -80,7 +81,9 @@ struct Game {
 
 	glm::uvec2 board_size = glm::uvec2(5,4);
 	std::vector< glm::mat4 > board_translations; //enemy movements
-	std::vector< glm::mat4 > targets; 
+	std::vector< glm::mat4 > targets;
+       	std::vector< float > bump; 
+		//enemies go opposite way for a bit after bumping one another
 	glm::quat cursor_rotation;
 	glm::mat4 duck_pos;
 
