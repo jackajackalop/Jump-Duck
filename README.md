@@ -1,11 +1,10 @@
 # Game Information
-(Note: fill in this portion with information about your game.)
 
-Title: (TODO: your game's title)
+Title: Jump Duck
 
-Author: (TODO: your name)
+Author: Yixin He (designed by clavika)
 
-Design Document: [TODO: name of design document](TODO: link to design document)
+Design Document: [Jump Duck design document](http://graphics.cs.cmu.edu/courses/15-466-f18/game0-designs/clavicka/)
 
 Screen Shot:
 
@@ -13,38 +12,16 @@ Screen Shot:
 
 Difficulties Encountered:
 
-TODO: write several sentences about any difficulties you may have encountered in creating the game.
+I had lots of difficulties with everthing initially. Navigating the base code, moving things around the window, using blender were all things that made me suffer for extended periods of time. Things got easier as I went along though. 
+
+At first, I had some difficulty adding the ability to reset my game, but that was fixed by changing the way I was going about it. 
 
 Good Code:
 
-TODO: write a sentence or two about any code you think you did particularly well.
+I think I'm happy with the way the enemies move. I made it so that when the enemy geese collide, one would go in the opposite direction for a short period of time. The code is not particularly complex, but I think it really benefits the game by making the enemy movement more interesting.
 
-# Using This Base Code
-
-Before you dive into the code, it helps to understand the overall structure of this repository.
-- Files you should read and/or edit:
-    - ```main.cpp``` creates the game window and contains the main loop. You should read through this file to understand what it's doing, but you shouldn't need to change things (other than window title and size).
-    - ```Game.*pp``` declaration+definition for the Game struct. These files will contain the bulk of your code changes.
-    - ```meshes/export-meshes.py``` exports meshes from a .blend file into a format usable by our game runtime. You will need to edit this file to add vertex color export code.
-    - ```Jamfile``` responsible for telling FTJam how to build the project. If you add any additional .cpp files or want to change the name of your runtime executable you will need to modify this.
-    - ```.gitignore``` ignores the ```objs/``` directory and the generated executable file. You will need to change it if your executable name changes. (If you find yourself changing it to ignore, e.g., your editor's swap files you should probably, instead be investigating making this change in the global git configuration.)
-- Files you probably should at least glance at because they are useful:
-    - ```read_chunk.hpp``` contains a function that reads a vector of structures prefixed by a magic number. It's surprising how many simple file formats you can create that only require such a function to access.
-    - ```data_path.*pp``` contains a helper function that allows you to specify paths relative to the executable (instead of the current working directory). Very useful when loading assets.
-	- ```gl_errors.hpp``` contains a function that checks for opengl error conditions. Also, the helpful macro ```GL_ERRORS()``` which calls ```gl_errors()``` with the current file and line number.
-- Files you probably don't need to read or edit:
-    - ```GL.hpp``` includes OpenGL prototypes without the namespace pollution of (e.g.) SDL's OpenGL header. It makes use of ```glcorearb.h``` and ```gl_shims.*pp``` to make this happen.
-    - ```make-gl-shims.py``` does what it says on the tin. Included in case you are curious. You won't need to run it.
-
-## Asset Build Instructions
-
-In order to generate the ```dist/meshes.blob``` file, tell blender to execute the ```meshes/export-meshes.py``` script:
-
-```
-blender --background --python meshes/export-meshes.py -- meshes/meshes.blend dist/meshes.blob
-```
-
-There is a Makefile in the ```meshes``` directory that will do this for you.
+## Base Code
+The base code I used for this project can be found [here](https://github.com/ixchow/15-466-f18-base0).
 
 ## Runtime Build Instructions
 
