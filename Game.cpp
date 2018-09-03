@@ -175,7 +175,6 @@ Game::Game() {
 			}
 			return f->second;
 		};
-		//tile_mesh = lookup("Tile");
 		cursor_mesh = lookup("White");
 		cursor_mesh_red = lookup("Red");
 		duck_mesh = lookup("Doll");
@@ -205,7 +204,6 @@ Game::Game() {
 
 	//----------------
 	//set up game board with meshes and rolls:
-	board_meshes.reserve(board_size.x * board_size.y);
 	board_translations.reserve(board_size.x * board_size.y); 
 	duck_pos = glm::mat4(
 			0.0f, 0.0f, 0.0f, 0.0f,
@@ -214,17 +212,21 @@ Game::Game() {
 			0.0f, 0.0f, 0.0f, 0.0f);
 ;
 	//TODO change all the allocations to max number of pieces instead of board size?
-	std::mt19937 mt(0xbead1234); //wtf apparently random num gen
 
 	std::vector< Mesh const * > meshes{ &duck_mesh, &target_mesh, &enemy_mesh };
 
 	//TODO add enemy and targets
-	board_meshes.emplace_back(&duck_mesh);	
 	board_translations.emplace_back(glm::mat4(
 				0.0f, 0.0f, 0.0f, 0.0f,
 				0.0f, 0.0f, 0.0f, 0.0f,
 				0.0f, 0.0f, 0.0f, 0.0f,
 				0.0f, 3.0f, 0.0f, 0.0f));
+
+	
+	std::mt19937 mt(0xbead1234); //wtf apparently random num gen
+	for(uint32_t i = 0; i<7; i++){
+		add_target();
+	}
 }
 
 Game::~Game() {
@@ -258,7 +260,6 @@ bool Game::handle_event(SDL_Event const &evt, glm::uvec2 window_size) {
 		if (evt.key.keysym.scancode == SDL_SCANCODE_SPACE) {
 			controls.up = (evt.type == SDL_KEYDOWN);
 			if(controls.up == false) {
-				height = 0.0f;
 				controls.jump = true;
 				velocity = glm::vec2(cursor/30.0f, 2.5*power);
 			}
@@ -266,6 +267,40 @@ bool Game::handle_event(SDL_Event const &evt, glm::uvec2 window_size) {
 		}
 	}
 	return false;
+}
+
+void Game::add_target(){
+	//following chunk is from the cppreference on random device
+	//https://en.cppreference.com/w/cpp/numeric/random/random_device
+	std::random_device rd;
+    	std::uniform_int_distribution<int> dist(0, 0xbead1234);
+	std::mt19937 mt(dist(rd));
+	
+	float newX = mt()%100/20.0f;
+	float newY = mt()%100/28.0f;
+	while(newY<1.0f) newY = mt()%100/26.0f;
+	targets.emplace_back(glm::mat4(
+			1.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, 1.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 1.0f, 0.0f,
+			newX, newY, 0.0f, 1.0f));
+
+}
+
+void Game::check_targets(){
+	for(uint32_t i = 0; i < 7; i++){
+		glm::vec2 t_pos = glm::vec2(targets[i][3][0], 
+						targets[i][3][1]);
+		glm::vec2 c_pos = glm::vec2(duck_pos[3][0],
+						duck_pos[3][1]);
+		
+		float distance = std::sqrt(std::pow((c_pos[0]-t_pos[0]), 2.0f)
+				+std::pow((c_pos[1]-t_pos[1]), 2.0f));
+		if(distance <= min_r){
+			targets.erase(targets.begin()+i);
+			add_target();
+		}
+	}
 }
 
 void Game::update(float elapsed) {
@@ -299,7 +334,7 @@ void Game::update(float elapsed) {
 		xpos += elapsed*velocity.x;
 		velocity.y += elapsed*-4.9;
 		if(height<0.01f){
-		//	height = 0.0f;
+			height = 0.0f;
 			power = 0;
 			velocity.x = 0.0f;
 			controls.jump = false;
@@ -309,7 +344,7 @@ void Game::update(float elapsed) {
 			0.0f, 0.0f, 0.0f, 0.0f,
 			0.0f, 0.0f, 0.0f, 0.0f,
 			xpos, height, 0.0f, 0.0f);
-
+		check_targets();
 	}
 	glm::vec2 target = glm::vec2(duck_pos[3][0], duck_pos[3][1]);
 	glm::vec2 current = glm::vec2(board_translations[0][3][0],
@@ -374,16 +409,18 @@ void Game::draw(glm::uvec2 drawable_size) {
 	uint32_t x = 0; 
 	uint32_t y = 0;
 	//TODO
-	draw_mesh(cursor_mesh, //white jump bar
+	
+	if(controls.up || controls.right || controls.left){
+		draw_mesh(cursor_mesh, //white jump bar
 			glm::mat4(
 				1.0f, 0.0f, 0.0f, 0.0f,
 				0.0f, 1.0f, 0.0f, 0.0f,
 				0.0f, 0.0f, 1.0f, 0.0f,
 				x+0.5f, 0.5f, 0.0f, 1.0f
 				)*glm::mat4_cast(cursor_rotation) //jump angle
-		 );
-
-	draw_mesh(cursor_mesh_red, glm::mat4( //red jump bar
+				+duck_pos);
+	
+		draw_mesh(cursor_mesh_red, glm::mat4( //red jump bar
 				1.0f, 0.0f, 0.0f, 0.0f,
 				0.0f, 1.0f, 0.0f, 0.0f,
 				0.0f, 0.0f, 1.0f, 0.0f,
@@ -393,7 +430,13 @@ void Game::draw(glm::uvec2 drawable_size) {
 				1.0f, 0.0f, 0.0f, 0.0f,
 				0.0f, 1.0f+power, 0.0f, 0.0f,
 				0.0f, 0.0f, 1.0f, 0.0f,
-				0.0f, 0.0f, 0.0f, 1.0f)); //jump power
+				0.0f, 0.0f, 0.0f, 1.0f) +duck_pos); //jump power
+	}
+
+	//draw all the targets
+	for(uint32_t i = 0; i<targets.size(); i++){
+		draw_mesh(target_mesh, targets[i]);
+	}
 
 	draw_mesh(duck_mesh, glm::mat4(
 				1.0f, 0.0f, 0.0f, 0.0f,

@@ -7,6 +7,7 @@
 #include <glm/gtc/quaternion.hpp>
 
 #include <vector>
+#include <random>
 
 // The 'Game' struct holds all of the game-relevant state,
 // and is called by the main loop.
@@ -21,6 +22,9 @@ struct Game {
 	// (note that this might be many times per frame or never)
 	//The function should return 'true' if it handled the event.
 	bool handle_event(SDL_Event const &evt, glm::uvec2 window_size);
+
+	void check_targets();
+	void add_target();
 
 	//update is called at the start of a new frame, after events are handled:
 	void update(float elapsed);
@@ -70,12 +74,13 @@ struct Game {
 	//------- game state -------
 
 	glm::uvec2 board_size = glm::uvec2(5,4);
-	std::vector< Mesh const * > board_meshes;
 	std::vector< glm::mat4 > board_translations;
+	std::vector< glm::mat4 > targets;
 	glm::quat cursor_rotation;
 
 	float power = 0.0f; //should only be between 0 and 1
 	float const max_power = 2.5f;
+	float const min_r = 0.3f;
 	bool increase = true;
 	int32_t cursor = 0; //should only be between -90 and 90
 
