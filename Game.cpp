@@ -325,12 +325,22 @@ void Game::check_targets(){
 			targets.erase(targets.begin()+i);
 			add_target();
 			score++;
+			//new enemy spawned for each 10 points gained
+			
+			if(score%10==0){
+				board_translations.emplace_back(glm::mat4(
+					0.0f, 0.0f, 0.0f, 0.0f,
+					0.0f, 0.0f, 0.0f, 0.0f,
+					0.0f, 0.0f, 0.0f, 0.0f,
+					0.0f, 3.0f, 0.0f, 0.0f));
+			}
+
 		}
 	}
 }
 
 void Game::check_enemies(){
-	for(uint32_t i = 0; i < 1; i++){
+	for(uint32_t i = 0; i < board_translations.size(); i++){
 		glm::vec2 t_pos = glm::vec2(board_translations[i][3][0], 
 					board_translations[i][3][1]);
 		glm::vec2 c_pos = glm::vec2(duck_pos[3][0],
@@ -381,8 +391,8 @@ void Game::update(float elapsed) {
 			velocity.x *= -0.8f;
 		}
 
-		if(height > 4.0){
-			velocity.y *= -0.8f;
+		if(height > 3.6){
+			velocity.y = -2.0f;
 		}
 
 		if(height<0.01f){
@@ -398,11 +408,16 @@ void Game::update(float elapsed) {
 			xpos, height, 0.0f, 0.0f);
 		check_targets();
 	}
-	glm::vec2 target = glm::vec2(duck_pos[3][0], duck_pos[3][1]);
-	glm::vec2 current = glm::vec2(board_translations[0][3][0],
-					board_translations[0][3][1]);
-	board_translations[0][3][0] += (target[0]-current[0])/(400.0f*speed);
-	board_translations[0][3][1] += (height-current[1])/(400.0f*speed);
+
+	for(uint32_t i = 0; i < board_translations.size(); i++){
+		glm::vec2 target = glm::vec2(duck_pos[3][0], duck_pos[3][1]);
+		glm::vec2 current = glm::vec2(board_translations[i][3][0],
+					board_translations[i][3][1]);
+		board_translations[i][3][0] += (target[0]-current[0])
+						/(400.0f*speed);
+		board_translations[i][3][1] += (height-current[1])
+						/(400.0f*speed);
+	}
 	check_enemies();
 
 }
@@ -478,7 +493,7 @@ void Game::draw(glm::uvec2 drawable_size) {
 			)*glm::mat4_cast(cursor_rotation) //jump angle
 			*glm::mat4(
 				1.0f, 0.0f, 0.0f, 0.0f,
-				0.0f, 1.0f+power, 0.0f, 0.0f,
+				0.0f, 1.0f+0.6f*power, 0.0f, 0.0f,
 				0.0f, 0.0f, 1.0f, 0.0f,
 				0.0f, 0.0f, 0.0f, 1.0f) +duck_pos); //jump power
 	}
@@ -494,14 +509,16 @@ void Game::draw(glm::uvec2 drawable_size) {
 				0.0f, 0.0f, 1.0f, 0.0f,
 				0.0, 0.5f, 0.0f, 1.0f)+ (duck_pos));
 
-	draw_mesh(enemy_mesh,
-			glm::mat4(
-				1.0f, 0.0f, 0.0f, 0.0f,
-				0.0f, 1.0f, 0.0f, 0.0f,
-				0.0f, 0.0f, 1.0f, 0.0f,
-				0.5f, 0.5f, 0.0f, 1.0f
-				) + board_translations[0]
-			);
+	for(uint32_t i = 0; i < board_translations.size(); i++){
+		draw_mesh(enemy_mesh,
+				glm::mat4(
+					1.0f, 0.0f, 0.0f, 0.0f,
+					0.0f, 1.0f, 0.0f, 0.0f,
+					0.0f, 0.0f, 1.0f, 0.0f,
+					0.5f, 0.5f, 0.0f, 1.0f
+					) + board_translations[i]
+				);
+	}
 	
 	uint32_t remainder = score;
 	float xcoord = 3.8f;
