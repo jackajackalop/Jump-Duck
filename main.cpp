@@ -21,10 +21,11 @@
 #include <algorithm>
 
 int main(int argc, char **argv) {
+
 	struct {
 		//TODO: this is where you set the title and size of your game window
-		std::string title = "TODO: Game Title";
-		glm::uvec2 size = glm::uvec2(640, 400);
+		std::string title = "Jump Duck";
+		glm::uvec2 size = glm::uvec2(1280, 800);
 	} config;
 
 	//------------  initialization ------------
@@ -48,11 +49,11 @@ int main(int argc, char **argv) {
 
 	//create window:
 	SDL_Window *window = SDL_CreateWindow(
-		config.title.c_str(),
-		SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-		config.size.x, config.size.y,
-		SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI
-	);
+			config.title.c_str(),
+			SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+			config.size.x, config.size.y,
+			SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI
+			);
 
 	//prevent exceedingly tiny windows when resizing:
 	SDL_SetWindowMinimumSize(window, 100, 100);
@@ -71,10 +72,10 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
-	#ifdef _WIN32
+#ifdef _WIN32
 	//On windows, load OpenGL extensions:
 	init_gl_shims();
-	#endif
+#endif
 
 	//Set VSYNC + Late Swap (prevents crazy FPS):
 	if (SDL_GL_SetSwapInterval(-1) != 0) {
@@ -109,9 +110,10 @@ int main(int argc, char **argv) {
 		glViewport(0, 0, drawable_size.x, drawable_size.y);
 	};
 	on_resize();
-
+	
 	//This will loop until the game object is set to null:
 	while (game) {
+
 		//every pass through the game loop creates one frame of output
 		//  by performing three steps:
 
@@ -161,8 +163,6 @@ int main(int argc, char **argv) {
 		//Finally, wait until the recently-drawn frame is shown before doing it all again:
 		SDL_GL_SwapWindow(window);
 	}
-
-
 	//------------  teardown ------------
 
 	SDL_GL_DeleteContext(context);
@@ -170,6 +170,5 @@ int main(int argc, char **argv) {
 
 	SDL_DestroyWindow(window);
 	window = NULL;
-
 	return 0;
 }

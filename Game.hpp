@@ -72,6 +72,9 @@ struct Game {
 	Mesh target_mesh;
 	Mesh enemy_mesh;
 	Mesh bg_mesh;
+	Mesh game_over_mesh;
+	Mesh restart_mesh;
+
 	std::vector<Mesh> numbers;
 	
 	GLuint meshes_for_simple_shading_vao = -1U; //vertex array object that describes how to connect the meshes_vbo to the simple_shading_program
@@ -90,6 +93,8 @@ struct Game {
 
 	float power = 0.0f; //should only be between 0 and 1
 	bool increase = true;
+	bool gameOver = false;
+	bool restart = false;
 	int32_t cursor = 0; //should only be between -90 and 90
 	float speed = 0.5f; //enemy speed
 	uint32_t score = 0;

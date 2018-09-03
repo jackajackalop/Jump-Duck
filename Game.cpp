@@ -181,6 +181,8 @@ Game::Game() {
 		target_mesh = lookup("Egg");
 		enemy_mesh = lookup("Cube");
 		bg_mesh = lookup("BG");
+		game_over_mesh = lookup("GameOver");
+		restart_mesh = lookup("Restart");
 
 		//number meshes are from 
 		//https://www.turbosquid.com/3d-models/free-numbers-1-2-3d-model/266953
@@ -204,7 +206,7 @@ Game::Game() {
 		numbers.emplace_back(mesh8);	
 		Mesh mesh9 = lookup("9");
 		numbers.emplace_back(mesh9);	
-	
+
 	}
 
 	{ //create vertex array object to hold the map from the mesh vertex buffer to shader program attributes:
@@ -236,19 +238,17 @@ Game::Game() {
 			0.0f, 0.0f, 0.0f, 0.0f,
 			0.0f, 0.0f, 0.0f, 0.0f);
 	cursor_rotation = glm::quat();
-;
-	//TODO change all the allocations to max number of pieces instead of board size?
+	;
 
 	std::vector< Mesh const * > meshes{ &duck_mesh, &target_mesh, &enemy_mesh };
 
-	//TODO add more enemy
 	board_translations.emplace_back(glm::mat4(
 				0.0f, 0.0f, 0.0f, 0.0f,
 				0.0f, 0.0f, 0.0f, 0.0f,
 				0.0f, 0.0f, 0.0f, 0.0f,
 				0.0f, 3.0f, 0.0f, 0.0f));
 	bump.emplace_back(0.0f);
-	
+
 	std::mt19937 mt(0xbead1234); //wtf apparently random num gen
 	for(uint32_t i = 0; i<7; i++){
 		add_target();
@@ -291,6 +291,9 @@ bool Game::handle_event(SDL_Event const &evt, glm::uvec2 window_size) {
 			}
 			return true;
 		}
+		if(gameOver && evt.key.keysym.scancode == SDL_SCANCODE_R){
+			restart = true;
+		}
 	}
 	return false;
 }
@@ -300,26 +303,26 @@ void Game::add_target(){
 	//which I looked up after a recommendation from Thejaswi Kadur
 	//https://en.cppreference.com/w/cpp/numeric/random/random_device
 	std::random_device rd;
-    	std::uniform_int_distribution<int> dist(0, 0xbead1234);
+	std::uniform_int_distribution<int> dist(0, 0xbead1234);
 	std::mt19937 mt(dist(rd));
-	
+
 	float newX = mt()%100/20.0f;
 	float newY = mt()%100/28.0f;
 	while(newY<1.0f) newY = mt()%100/26.0f;
 	targets.emplace_back(glm::mat4(
-			1.0f, 0.0f, 0.0f, 0.0f,
-			0.0f, 1.0f, 0.0f, 0.0f,
-			0.0f, 0.0f, 1.0f, 0.0f,
-			newX, newY, 0.0f, 1.0f));
+				1.0f, 0.0f, 0.0f, 0.0f,
+				0.0f, 1.0f, 0.0f, 0.0f,
+				0.0f, 0.0f, 1.0f, 0.0f,
+				newX, newY, 0.0f, 1.0f));
 }
 
 void Game::check_targets(){
 	for(uint32_t i = 0; i < 7; i++){
 		glm::vec2 t_pos = glm::vec2(targets[i][3][0], 
-						targets[i][3][1]);
+				targets[i][3][1]);
 		glm::vec2 c_pos = glm::vec2(duck_pos[3][0],
-						height);
-		
+				height);
+
 		float distance = std::sqrt(std::pow((c_pos[0]-t_pos[0]), 2.0f)
 				+std::pow((c_pos[1]-t_pos[1]), 2.0f));
 		if(distance <= min_r){
@@ -327,13 +330,13 @@ void Game::check_targets(){
 			add_target();
 			score++;
 			//new enemy spawned for each 10 points gained
-			
+
 			if(score%10==0){
 				board_translations.emplace_back(glm::mat4(
-					0.0f, 0.0f, 0.0f, 0.0f,
-					0.0f, 0.0f, 0.0f, 0.0f,
-					0.0f, 0.0f, 0.0f, 0.0f,
-					0.0f, 3.0f, 0.0f, 0.0f));
+							0.0f, 0.0f, 0.0f, 0.0f,
+							0.0f, 0.0f, 0.0f, 0.0f,
+							0.0f, 0.0f, 0.0f, 0.0f,
+							0.0f, 3.0f, 0.0f, 0.0f));
 				bump.emplace_back(0.0f);
 			}
 
@@ -344,20 +347,20 @@ void Game::check_targets(){
 void Game::check_enemies(){
 	for(uint32_t i = 0; i < board_translations.size(); i++){
 		glm::vec2 t_pos = glm::vec2(board_translations[i][3][0], 
-					board_translations[i][3][1]);
+				board_translations[i][3][1]);
 		glm::vec2 c_pos = glm::vec2(duck_pos[3][0],
-						height);
+				height);
 		float distance = std::sqrt(std::pow((c_pos[0]-t_pos[0]), 2.0f)
 				+std::pow((c_pos[1]-t_pos[1]), 2.0f));
 		if(distance <= min_r){
-			//TODO gameover
+			gameOver = true;
 		}
 	}
 }
 
 void Game::enemies_collision(uint32_t current){
 	glm::vec2 c_pos = glm::vec2(board_translations[current][3][0], 
-					board_translations[current][3][1]);
+			board_translations[current][3][1]);
 	for(uint32_t i = 0; i < board_translations.size(); i++){
 		if(i!=current){
 			glm::vec2 t_pos = glm::vec2(board_translations[i][3][0], 						board_translations[i][3][1]);
@@ -404,7 +407,7 @@ void Game::update(float elapsed) {
 		height += elapsed*(velocity.y+elapsed*-4.9f);
 		xpos += elapsed*velocity.x;
 		velocity.y += elapsed*-4.9;
-	
+
 		if(xpos < -0.5f || xpos > 5.5f){
 			velocity.x *= -0.8f;
 		}
@@ -420,20 +423,20 @@ void Game::update(float elapsed) {
 			controls.jump = false;
 		}
 		duck_pos = glm::mat4(
-			0.0f, 0.0f, 0.0f, 0.0f,
-			0.0f, 0.0f, 0.0f, 0.0f,
-			0.0f, 0.0f, 0.0f, 0.0f,
-			xpos, height, 0.0f, 0.0f);
+				0.0f, 0.0f, 0.0f, 0.0f,
+				0.0f, 0.0f, 0.0f, 0.0f,
+				0.0f, 0.0f, 0.0f, 0.0f,
+				xpos, height, 0.0f, 0.0f);
 		check_targets();
 	}
 
 	for(uint32_t i = 0; i < board_translations.size(); i++){
 		glm::vec2 target = glm::vec2(duck_pos[3][0], duck_pos[3][1]);
 		glm::vec2 current = glm::vec2(board_translations[i][3][0],
-					board_translations[i][3][1]);
-		float dx = (target[0]-current[0])/(400.0f*speed);
-		float dy = (height-current[1])/(400.0f*speed);
-		
+				board_translations[i][3][1]);
+		float dx = (target[0]-current[0])/(400.0f/speed);
+		float dy = (height-current[1])/(400.0f/speed);
+
 		if(bump[i]>0.0f){
 			dx *= -1.0f;
 			dy *= -1.0f;
@@ -446,6 +449,37 @@ void Game::update(float elapsed) {
 		enemies_collision(i);
 	}
 	check_enemies();
+
+	if(restart){
+		cursor_rotation = glm::quat();
+		board_translations.clear();
+		bump.clear();
+		board_translations.emplace_back(glm::mat4(
+				0.0f, 0.0f, 0.0f, 0.0f,
+				0.0f, 0.0f, 0.0f, 0.0f,
+				0.0f, 0.0f, 0.0f, 0.0f,
+				0.0f, 3.0f, 0.0f, 0.0f));
+		bump.emplace_back(0.0f);
+		
+		targets.clear();
+		for(uint32_t i = 0; i<7; i++){
+			add_target();
+		}
+	
+		gameOver = false;
+		restart = false;
+		cursor = 0; //should only be between -90 and 90
+		score = 0;
+		
+		duck_pos = glm::mat4(
+			0.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 0.0f, 0.0f);
+		height = 0.0f; //ducks height
+		xpos = 0.0f; //ducks horizontal position 
+		velocity = glm::vec2(0.0f, 0.0f);
+	}
 
 }
 
@@ -501,74 +535,88 @@ void Game::draw(glm::uvec2 drawable_size) {
 		//draw the mesh:
 		glDrawArrays(GL_TRIANGLES, mesh.first, mesh.count);
 	};
-	
+
 	draw_mesh(bg_mesh, glm::mat4(
-			1.0f, 0.0f, 0.0f, 0.0f,
-			0.0f, 1.0f, 0.0f, 0.0f,
-			0.0f, 0.0f, 1.0f, 0.0f,
-			0.0, 0.0f, 0.0f, 1.0f));
-
-
-	if(controls.up || controls.right || controls.left){
-		draw_mesh(cursor_mesh, //white jump bar
-			glm::mat4(
 				1.0f, 0.0f, 0.0f, 0.0f,
 				0.0f, 1.0f, 0.0f, 0.0f,
 				0.0f, 0.0f, 1.0f, 0.0f,
-				0.0f, 0.3f, 0.0f, 1.0f
-				)*glm::mat4_cast(cursor_rotation) //jump angle
-				+duck_pos);
-	
-		draw_mesh(cursor_mesh_red, glm::mat4( //red jump bar
-				1.0f, 0.0f, 0.0f, 0.0f,
-				0.0f, 1.0f, 0.0f, 0.0f,
-				0.0f, 0.0f, 1.0f, 0.0f,
-				0.0f, 0.3f, 0.0f, 1.0f
-			)*glm::mat4_cast(cursor_rotation) //jump angle
-			*glm::mat4(
-				1.0f, 0.0f, 0.0f, 0.0f,
-				0.0f, 1.0f+0.6f*power, 0.0f, 0.0f,
-				0.0f, 0.0f, 1.0f, 0.0f,
-				0.0f, 0.0f, 0.0f, 1.0f) +duck_pos); //jump power
-	}
+				0.0, 0.0f, 0.0f, 1.0f));
 
-	//draw all the targets
-	for(uint32_t i = 0; i<targets.size(); i++){
-		draw_mesh(target_mesh, targets[i]);
-	}
-
-	draw_mesh(duck_mesh, glm::mat4(
-				1.0f, 0.0f, 0.0f, 0.0f,
-				0.0f, 1.0f, 0.0f, 0.0f,
-				0.0f, 0.0f, 1.0f, 0.0f,
-				0.0, 0.5f, 0.0f, 1.0f)+ (duck_pos));
-
-	for(uint32_t i = 0; i < board_translations.size(); i++){
-		draw_mesh(enemy_mesh,
-				glm::mat4(
+	if(gameOver){
+		draw_mesh(game_over_mesh, glm::mat4(
 					1.0f, 0.0f, 0.0f, 0.0f,
 					0.0f, 1.0f, 0.0f, 0.0f,
 					0.0f, 0.0f, 1.0f, 0.0f,
-					0.5f, 0.5f, 0.0f, 1.0f
-					) + board_translations[i]
-				);
+					0.0, 0.0f, 0.0f, 1.0f));
+		draw_mesh(restart_mesh, glm::mat4(
+					1.0f, 0.0f, 0.0f, 0.0f,
+					0.0f, 1.0f, 0.0f, 0.0f,
+					0.0f, 0.0f, 1.0f, 0.0f,
+					0.0, 0.0f, 0.0f, 1.0f));
+
+	}else{
+
+
+		if(controls.up || controls.right || controls.left){
+			draw_mesh(cursor_mesh, //white jump bar
+					glm::mat4(
+						1.0f, 0.0f, 0.0f, 0.0f,
+						0.0f, 1.0f, 0.0f, 0.0f,
+						0.0f, 0.0f, 1.0f, 0.0f,
+						0.0f, 0.3f, 0.0f, 1.0f
+						)*glm::mat4_cast(cursor_rotation) //jump angle
+					+duck_pos);
+
+			draw_mesh(cursor_mesh_red, glm::mat4( //red jump bar
+						1.0f, 0.0f, 0.0f, 0.0f,
+						0.0f, 1.0f, 0.0f, 0.0f,
+						0.0f, 0.0f, 1.0f, 0.0f,
+						0.0f, 0.3f, 0.0f, 1.0f
+						)*glm::mat4_cast(cursor_rotation) //jump angle
+					*glm::mat4(
+						1.0f, 0.0f, 0.0f, 0.0f,
+						0.0f, 1.0f+0.6f*power, 0.0f, 0.0f,
+						0.0f, 0.0f, 1.0f, 0.0f,
+						0.0f, 0.0f, 0.0f, 1.0f) +duck_pos); //jump power
+		}
+
+		//draw all the targets
+		for(uint32_t i = 0; i<targets.size(); i++){
+			draw_mesh(target_mesh, targets[i]);
+		}
+
+		draw_mesh(duck_mesh, glm::mat4(
+					1.0f, 0.0f, 0.0f, 0.0f,
+					0.0f, 1.0f, 0.0f, 0.0f,
+					0.0f, 0.0f, 1.0f, 0.0f,
+					0.0, 0.5f, 0.0f, 1.0f)+ (duck_pos));
+
+		for(uint32_t i = 0; i < board_translations.size(); i++){
+			draw_mesh(enemy_mesh,
+					glm::mat4(
+						1.0f, 0.0f, 0.0f, 0.0f,
+						0.0f, 1.0f, 0.0f, 0.0f,
+						0.0f, 0.0f, 1.0f, 0.0f,
+						0.5f, 0.5f, 0.0f, 1.0f
+						) + board_translations[i]
+				 );
+		}
+
+		uint32_t remainder = score;
+		float xcoord = 3.8f;
+		do{
+			int digit = remainder%10;
+			draw_mesh(numbers[digit],
+					glm::mat4(
+						1.0f, 0.0f, 0.0f, 0.0f,
+						0.0f, 1.0f, 0.0f, 0.0f,
+						0.0f, 0.0f, 1.0f, 0.0f,
+						xcoord, 2.5f, 0.0f, 1.0f));
+
+			remainder /= 10;
+			xcoord -= 0.1f;
+		}while(remainder>0);
 	}
-	
-	uint32_t remainder = score;
-	float xcoord = 3.8f;
-	do{
-		int digit = remainder%10;
-		draw_mesh(numbers[digit],
-			glm::mat4(
-				1.0f, 0.0f, 0.0f, 0.0f,
-				0.0f, 1.0f, 0.0f, 0.0f,
-				0.0f, 0.0f, 1.0f, 0.0f,
-				xcoord, 2.5f, 0.0f, 1.0f));
-				
-		remainder /= 10;
-		xcoord -= 0.1f;
-	}while(remainder>0);
-	
 	glUseProgram(0);
 
 	GL_ERRORS();
