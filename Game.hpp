@@ -83,6 +83,7 @@ struct Game {
 	glm::vec2 velocity = glm::vec2(0.0f, 0.0f);
 	float height = 0.0f;
 	float xpos = 0.0f;
+	float speed = 0.5f;
 
 	struct {
 		bool left = false;

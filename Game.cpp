@@ -224,7 +224,7 @@ Game::Game() {
 				0.0f, 0.0f, 0.0f, 0.0f,
 				0.0f, 0.0f, 0.0f, 0.0f,
 				0.0f, 0.0f, 0.0f, 0.0f,
-				0.0f, 0.0f, 0.0f, 0.0f));
+				0.0f, 3.0f, 0.0f, 0.0f));
 }
 
 Game::~Game() {
@@ -258,6 +258,7 @@ bool Game::handle_event(SDL_Event const &evt, glm::uvec2 window_size) {
 		if (evt.key.keysym.scancode == SDL_SCANCODE_SPACE) {
 			controls.up = (evt.type == SDL_KEYDOWN);
 			if(controls.up == false) {
+				height = 0.0f;
 				controls.jump = true;
 				velocity = glm::vec2(cursor/30.0f, 2.5*power);
 			}
@@ -280,12 +281,12 @@ void Game::update(float elapsed) {
 		dr = glm::angleAxis(-amt, glm::vec3(0.0f, 0.0f, 1.0f)) * dr;
 	}else if (controls.up){
 		if(increase && power<max_power)
-			power+=0.03f;
+			power+=0.1f;
 		else if(!increase && power>0.0f)
-			power-=0.03f;
+			power-=0.1f;
 
-		if(increase && power>max_power) increase = false;
-		if(!increase && power<0) increase = true;
+		if(increase && power>=max_power) increase = false;
+		if(!increase && power<=0) increase = true;
 	}
 
 	if (dr != glm::quat()) {
@@ -298,7 +299,7 @@ void Game::update(float elapsed) {
 		xpos += elapsed*velocity.x;
 		velocity.y += elapsed*-4.9;
 		if(height<0.01f){
-			height = 0.0f;
+		//	height = 0.0f;
 			power = 0;
 			velocity.x = 0.0f;
 			controls.jump = false;
@@ -310,6 +311,12 @@ void Game::update(float elapsed) {
 			xpos, height, 0.0f, 0.0f);
 
 	}
+	glm::vec2 target = glm::vec2(duck_pos[3][0], duck_pos[3][1]);
+	glm::vec2 current = glm::vec2(board_translations[0][3][0],
+					board_translations[0][3][1]);
+	board_translations[0][3][0] += (target[0]-current[0])/(400.0f*speed);
+	board_translations[0][3][1] += (height-current[1])/(400.0f*speed);
+
 }
 
 void Game::draw(glm::uvec2 drawable_size) {
@@ -367,46 +374,43 @@ void Game::draw(glm::uvec2 drawable_size) {
 	uint32_t x = 0; 
 	uint32_t y = 0;
 	//TODO
-	draw_mesh(tile_mesh,
-			glm::mat4(
-				1.0f, 0.0f, 0.0f, 0.0f,
-				0.0f, 1.0f, 0.0f, 0.0f,
-				0.0f, 0.0f, 1.0f, 0.0f,
-				x+0.5f, y+0.5f,-0.5f, 1.0f
-				)
-		 );
-	draw_mesh(cursor_mesh,
+	draw_mesh(cursor_mesh, //white jump bar
 			glm::mat4(
 				1.0f, 0.0f, 0.0f, 0.0f,
 				0.0f, 1.0f, 0.0f, 0.0f,
 				0.0f, 0.0f, 1.0f, 0.0f,
 				x+0.5f, 0.5f, 0.0f, 1.0f
-				)*glm::mat4_cast(cursor_rotation)
+				)*glm::mat4_cast(cursor_rotation) //jump angle
 		 );
 
-	draw_mesh(cursor_mesh_red,
-			glm::mat4(
+	draw_mesh(cursor_mesh_red, glm::mat4( //red jump bar
 				1.0f, 0.0f, 0.0f, 0.0f,
 				0.0f, 1.0f, 0.0f, 0.0f,
 				0.0f, 0.0f, 1.0f, 0.0f,
 				x+0.5f, 0.5f, 0.0f, 1.0f
-				)*glm::mat4_cast(cursor_rotation)
+			)*glm::mat4_cast(cursor_rotation) //jump angle
 			*glm::mat4(
 				1.0f, 0.0f, 0.0f, 0.0f,
 				0.0f, 1.0f+power, 0.0f, 0.0f,
 				0.0f, 0.0f, 1.0f, 0.0f,
-				0.0f, 0.0f, 0.0f, 1.0f)
-		 );
+				0.0f, 0.0f, 0.0f, 1.0f)); //jump power
 
-	draw_mesh(duck_mesh,
+	draw_mesh(duck_mesh, glm::mat4(
+				1.0f, 0.0f, 0.0f, 0.0f,
+				0.0f, 1.0f, 0.0f, 0.0f,
+				0.0f, 0.0f, 1.0f, 0.0f,
+				x+0.5f, y+0.5f, 0.0f, 1.0f)+ (duck_pos));
+
+	draw_mesh(enemy_mesh,
 			glm::mat4(
 				1.0f, 0.0f, 0.0f, 0.0f,
 				0.0f, 1.0f, 0.0f, 0.0f,
 				0.0f, 0.0f, 1.0f, 0.0f,
 				x+0.5f, y+0.5f, 0.0f, 1.0f
-				)
-			+ (duck_pos)
-		 );
+				) + board_translations[0]
+			);
+
+
 
 	glUseProgram(0);
 
