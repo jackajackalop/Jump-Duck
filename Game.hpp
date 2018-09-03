@@ -71,21 +71,11 @@ struct Game {
 	Mesh target_mesh;
 	Mesh enemy_mesh;
 	std::vector<Mesh> numbers;
-/*	Mesh mesh0;
-	Mesh mesh1;
-	Mesh mesh2;
-	Mesh mesh3;
-	Mesh mesh4;
-	Mesh mesh5;
-	Mesh mesh6;
-	Mesh mesh7;
-	Mesh mesh8;
-	Mesh mesh9;
-*/
+	
 	GLuint meshes_for_simple_shading_vao = -1U; //vertex array object that describes how to connect the meshes_vbo to the simple_shading_program
 
 	//------- game state -------
-	float const max_power = 2.5f;
+	float const max_power = 4.0f;
 	float const min_r = 0.3f;
 
 	glm::uvec2 board_size = glm::uvec2(5,4);

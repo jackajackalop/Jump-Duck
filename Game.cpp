@@ -234,6 +234,7 @@ Game::Game() {
 			0.0f, 0.0f, 0.0f, 0.0f,
 			0.0f, 0.0f, 0.0f, 0.0f,
 			0.0f, 0.0f, 0.0f, 0.0f);
+	cursor_rotation = glm::quat();
 ;
 	//TODO change all the allocations to max number of pieces instead of board size?
 
@@ -375,7 +376,15 @@ void Game::update(float elapsed) {
 		height += elapsed*(velocity.y+elapsed*-4.9f);
 		xpos += elapsed*velocity.x;
 		velocity.y += elapsed*-4.9;
-		
+	
+		if(xpos < -0.5f || xpos > 5.5f){
+			velocity.x *= -0.8f;
+		}
+
+		if(height > 4.0){
+			velocity.y *= -0.8f;
+		}
+
 		if(height<0.01f){
 			height = 0.0f;
 			power = 0;
@@ -450,8 +459,6 @@ void Game::draw(glm::uvec2 drawable_size) {
 		//draw the mesh:
 		glDrawArrays(GL_TRIANGLES, mesh.first, mesh.count);
 	};
-	uint32_t x = 0; 
-	uint32_t y = 0;
 	
 	if(controls.up || controls.right || controls.left){
 		draw_mesh(cursor_mesh, //white jump bar
@@ -459,7 +466,7 @@ void Game::draw(glm::uvec2 drawable_size) {
 				1.0f, 0.0f, 0.0f, 0.0f,
 				0.0f, 1.0f, 0.0f, 0.0f,
 				0.0f, 0.0f, 1.0f, 0.0f,
-				x+0.5f, 0.5f, 0.0f, 1.0f
+				0.0f, 0.5f, 0.0f, 1.0f
 				)*glm::mat4_cast(cursor_rotation) //jump angle
 				+duck_pos);
 	
@@ -467,7 +474,7 @@ void Game::draw(glm::uvec2 drawable_size) {
 				1.0f, 0.0f, 0.0f, 0.0f,
 				0.0f, 1.0f, 0.0f, 0.0f,
 				0.0f, 0.0f, 1.0f, 0.0f,
-				x+0.5f, 0.5f, 0.0f, 1.0f
+				0.0f, 0.5f, 0.0f, 1.0f
 			)*glm::mat4_cast(cursor_rotation) //jump angle
 			*glm::mat4(
 				1.0f, 0.0f, 0.0f, 0.0f,
@@ -485,14 +492,14 @@ void Game::draw(glm::uvec2 drawable_size) {
 				1.0f, 0.0f, 0.0f, 0.0f,
 				0.0f, 1.0f, 0.0f, 0.0f,
 				0.0f, 0.0f, 1.0f, 0.0f,
-				x+0.5f, y+0.5f, 0.0f, 1.0f)+ (duck_pos));
+				0.0, 0.5f, 0.0f, 1.0f)+ (duck_pos));
 
 	draw_mesh(enemy_mesh,
 			glm::mat4(
 				1.0f, 0.0f, 0.0f, 0.0f,
 				0.0f, 1.0f, 0.0f, 0.0f,
 				0.0f, 0.0f, 1.0f, 0.0f,
-				x+0.5f, y+0.5f, 0.0f, 1.0f
+				0.5f, 0.5f, 0.0f, 1.0f
 				) + board_translations[0]
 			);
 	
