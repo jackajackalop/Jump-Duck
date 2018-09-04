@@ -287,7 +287,7 @@ bool Game::handle_event(SDL_Event const &evt, glm::uvec2 window_size) {
 			controls.up = (evt.type == SDL_KEYDOWN);
 			if(controls.up == false && height == 0.0f) {
 				controls.jump = true;
-				velocity = glm::vec2(cursor/30.0f, 2.5*power);
+				velocity = glm::vec2(cursor/20.0f, 2.0*power);
 			}
 			return true;
 		}
@@ -346,7 +346,7 @@ void Game::check_targets(){
 
 void Game::check_enemies(){
 	for(uint32_t i = 0; i < board_translations.size(); i++){
-		glm::vec2 t_pos = glm::vec2(board_translations[i][3][0], 
+		glm::vec2 t_pos = glm::vec2(board_translations[i][3][0]+0.4f, 
 				board_translations[i][3][1]);
 		glm::vec2 c_pos = glm::vec2(duck_pos[3][0],
 				height);
